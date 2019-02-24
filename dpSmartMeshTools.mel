@@ -1,15 +1,18 @@
 //////////////////////////////////////
-/////       SmartMesh Tools       ////
-/////         Version 1.0         ////
+////                              ////
+////       SmartMesh  Tools       ////
+////                              ////
 //////////////////////////////////////
    //                          //
 //////////////////////////////////////
+////                              ////
 ////  Authored and Maintained by  ////
 ////                              ////
 ////  Dennis "Bartalon" Porter    ////
 ////                              ////
 ////  Dennis.Porter.3D@gmail.com  ////
 ////    www.DennisPorter3D.com    ////
+////                              ////
 //////////////////////////////////////
  /*
 
@@ -30,8 +33,8 @@ or www.DennisPorter3D.com/mel.htm
 
 */
 
-global string $stRelease = "27 January 2015";
-global string $stVersion = "1.1.0";
+global string $stRelease = "27 January 2019";
+global string $stVersion = "1.2.0 BETA";
 
 
 /////////////////////////////////
@@ -48,10 +51,10 @@ global string $stVersion = "1.1.0";
 //  Be careful not to delete the semicolons (there should be one at
 //  the end of each line in ths section
 
-global int $st_CustomNames_Combine = 1;
-global int $st_CustomNames_Separate = 1;
-global int $st_CustomNames_Extract = 1;
-global int $st_CustomNames_DupeFace = 1;
+global int $smt_CustomNames_Combine = 1;
+global int $smt_CustomNames_Separate = 1;
+global int $smt_CustomNames_Extract = 1;
+global int $smt_CustomNames_DupeFace = 1;
 
 //////////////////////////////
 //  SmartMesh Tools Window  //
@@ -59,6 +62,24 @@ global int $st_CustomNames_DupeFace = 1;
 
 global proc dpSmartMeshTools() {
 	global string $stVersion;
+
+    // if (`window -ex stAboutWindow`) { deleteUI stAboutWindow; }
+    if (`window -ex stBindHotkey`) { deleteUI stBindHotkey; }
+	if (`window -ex smartMeshToolsWindow`) { deleteUI smartMeshToolsWindow; }
+
+    window -mxb 0 -mnb 0 -tlb 1 -title ("SmartMesh Tools v" + $stVersion) -w 200 -s 0 smartMeshToolsWindow;
+    	smt_buildUI();
+
+    window -e -w 50 -h 50 smartMeshToolsWindow;
+    showWindow smartMeshToolsWindow;
+}
+
+global proc smt_buildUI() {
+	string $iconButtonName[] = {
+		"smt_ico_combine",
+		"smt_ico_separate",
+		"smt_ico_extract",
+		"smt_ico_duplicate" };
 	string $buttonLabel[] = {
 		"Smart Combine",
 		"Smart Separate",
@@ -69,36 +90,60 @@ global proc dpSmartMeshTools() {
 		"polySeparate.png",
 		"polyChipOff.png",
 		"polyDuplicateFacet.png" };
+	string $buttonCmd[] = {
+		"dpSmartCombine()",
+		"dpSmartSeparate()",
+		"dpSmartExtractDuplicate(1)",
+		"dpSmartExtractDuplicate(0)" };
+	string $p = "smt_form_main";
+	string $icoKey;
+	int $top;
+	int $h = 40;
+	float $b = 0.23;
 
-    if (`window -ex stAboutWindow`) { deleteUI stAboutWindow; windowPref -remove stAboutWindow; }
-    if (`window -ex stBindHotkey`) { deleteUI stBindHotkey; windowPref -remove stBindHotkey; }
-	if (`window -ex smartMeshToolsWindow`) { deleteUI smartMeshToolsWindow; }
+	formLayout -bgc .2 .2 .2 -p smartMeshToolsWindow $p;
+		for ( $i=0; $i<`size $iconButtonName`; ++$i ) {
+			string $ico = $iconButtonName[$i];
+			$icoKey = $ico + "_hk";
+			string $icoShelf = $ico + "_sb";
+			string $lbl = $buttonLabel[$i];
+			string $img = $buttonImage[$i];
+			string $cmd = $buttonCmd[$i];
 
-    window -mxb 0 -mnb 0 -tlb 1 -title ("SmartMesh Tools v" + $stVersion) -w 200 smartMeshToolsWindow;
-        gridLayout -cellWidthHeight 225 32 -numberOfColumns 1;
-            for ($i=0; $i<4; ++$i) {
-				string $buttonCommand = "";
-            	if ($i == 0) { $buttonCommand = "dpSmartCombine();"; }
-            	if ($i == 1) { $buttonCommand = "dpSmartSeparate();"; }
-            	if ($i == 2) { $buttonCommand = "dpSmartExtractDuplicate(1);"; }
-            	if ($i == 3) { $buttonCommand = "dpSmartExtractDuplicate(0);"; }
-	            gridLayout -cellWidth 161 -numberOfColumns 2;
-	        		iconTextButton -style "iconAndTextHorizontal" -l $buttonLabel[$i] -i $buttonImage[$i] -h 25 -c ( $buttonCommand );
-	                gridLayout -cellWidth 32 -numberOfColumns 2;
-	                    iconTextButton -style "iconOnly" -image "SafeTitle.png" -ann "Bind a hotkey" -c ( "stHotkey(" + $i + ")" ) ;
-	                    iconTextButton -style "iconOnly" -image "factoryIcon.png" -ann "Create a shelf button" -c ( "dpSmartMeshToolButton(" + $i + ")" );
-	                setParent..;
-	            setParent..;
-            }
-            gridLayout -cellWidth 193 -numberOfColumns 2;
-    			iconTextButton -style "textOnly" -l "Make a shelf button for this window" -c "dpSmartMeshToolButton(4);";
-    			gridLayout -cellWidth 32 -numberOfColumns 1;
-    				iconTextButton -style "iconOnly" -image "pickOtherComp.png" -ann "About SmartMesh Tools" -c "stAbout;";
-    			setParent..;
-    		setParent..;
-    	setParent..;
+			iconTextButton -bgc $b $b $b -style "iconOnly" -h $h -image "text.png" -ann "Bind a hotkey" -c ( "stHotkey(" + $i + ")" ) $icoKey;
+			iconTextButton -bgc $b $b $b -style "iconOnly" -h $h -w $h -image "factoryIcon.png" -ann "Create a shelf button" -c ( "dpSmartMeshToolButton(" + $i + ")" ) $icoShelf;
+			iconTextButton -bgc $b $b $b -style "iconAndTextHorizontal" -w 150 -h $h -l $lbl -i $img -c $cmd $ico;
 
-    showWindow smartMeshToolsWindow;
+			formLayout -edit 
+				-attachForm 	$ico 		"top" 	$top
+				-attachForm 	$ico 		"left" 	75 
+				-attachForm 	$ico 		"right" 0 
+				-attachForm 	$icoKey 	"top" 	$top
+				-attachForm 	$icoKey 	"left" 	0 
+				-attachForm 	$icoShelf 	"top" 	$top
+				-attachControl 	$icoShelf 	"left" 	-5 		$icoKey
+			$p;
+
+			$top = $top + $h;
+			$b = .5 - $b;
+		}
+
+		iconTextButton -style "iconOnly" -h 30 -image "pickOtherComp.png" -ann "About SmartMesh Tools" -c "stAbout;" smt_ico_info;
+		iconTextButton -style "iconOnly" -h 30 -image "factoryIcon.png" -c "dpSmartMeshToolButton(4);" -ann "Make a shelf button for this window" smt_ico_makeBtn;
+		iconTextButton -bgc 0 0 0 -w 1 -h ($h * `size $iconButtonName`) -p $p divider;
+		checkBox -l "Keep Empty Groups" -v 0 -ann "Keep empty groups after combining objects" -p $p smt_cb_groups;
+
+		formLayout -edit 
+			-attachForm 	smt_ico_info 	"bottom" 	0
+			-attachForm 	smt_ico_info 	"right" 	0
+			-attachForm 	smt_ico_makeBtn "bottom"	0
+			-attachControl 	smt_ico_makeBtn "right" 	0 	smt_ico_info
+			-attachForm 	divider 		"left" 		72
+			-attachForm 	smt_cb_groups 	"bottom" 	7
+			-attachForm 	smt_cb_groups 	"left" 		10
+		$p;
+
+
 }
 
 
@@ -107,120 +152,190 @@ global proc dpSmartMeshTools() {
 /////////////////////
 
 global proc dpSmartCombine() {
-	global int $st_CustomNames_Combine;
-	////  Gather Info
-	// A. Check for at least 2 mesh objects
-	int $groupMeshes = (size(`listRelatives -type "mesh" (listRelatives("-f", "-type", "transform"))`));
-	int $singleMeshes = (size(`listRelatives -f -type "mesh"`));
-	if ($groupMeshes + $singleMeshes < 2) { error "Your selection must be, or be parents of, at least two mesh objects."; }
+	string $sel[] = `ls -l -sl`;
+	string $allGroups[] = `ls -l -type "transform"`;
+	string $allJoints[] = `ls -l -type "joint"`;
+	string $allCurves[] = `ls -l -type "nurbsCurve"`;
+	string $allCameras[] = `listCameras`;
+	$allGroups = stringArrayRemove($allJoints, $allGroups);
+	$allGroups = stringArrayRemove($allCameras, $allGroups);
+	$allGroups = stringArrayRemove($allCurves, $allGroups);
 
-	// B. Get Selection Groups
-	string $sel[] = `ls -l -sl`; // long names to avoid duplicate names under different parents
-	string $name[] = `ls -sl`; // for renaming groups
-	select -hi $sel;
-	select -d `ls -s -sl`; // omits shape objects
-	string $allObjects[] = `ls -l -sl`; // for instancing purposes
-	select $sel;
-
-	// C. Store Raw Groups Long Names
-	string $untokenizedGroups[];
-	for ($obj in $sel) {
-		$untokenizedGroups = stringArrayCatenate($untokenizedGroups, `listRelatives -f -p $obj`);
-	}
-	string $rawGroupsCount[] = $untokenizedGroups; // Provides a count of all parents of selection (for determining destination)
-	$untokenizedGroups = stringArrayRemoveDuplicates($untokenizedGroups);
-
-	// D. Tokenize Raw Groups
-	string $buffer[];
-	string $destinationGroups[];
-	for ($obj in $untokenizedGroups) { // For unique groups
-		tokenize $obj "|" $buffer;
-		$destinationGroups[`size $destinationGroups`] = $buffer[`size $buffer`-1];
-	}
-
-	string $groupsCounter[];
-	for ($obj in $rawGroupsCount) {
-		tokenize $obj "|" $buffer;
-		$groupsCounter[`size $groupsCounter`] = $buffer[`size $buffer`-1];
-	}
-	
-	// E. Determine Mesh Destination
-	int $count;
-	int $index;
-	for ($i=0; $i<`size $destinationGroups`; ++$i) { // For counting group occupancy size
-		if (stringArrayCount($destinationGroups[$i], $groupsCounter) > $count) { 
-			$count = stringArrayCount($destinationGroups[$i], $groupsCounter);
-			$index = $i;
+	// remove transform objects that have shape children (these are not groups)
+	int $i = 0;
+	while ( $i<`size $allGroups` ) {
+		if ( (size(`listRelatives -f -s $allGroups[$i]`)) > 0 ) {
+			stringArrayRemoveAtIndex($i, $allGroups);
 		}
+		else { ++$i; }
 	}
 
-	//  F. Determine name of final combined mesh
-	int $sequence;
-	string $combinedName;
-	while (`objExists ("SmartCombine_" + $sequence)`) { ++$sequence; }
+	string $children[] = `listRelatives -ad -f`;
+	string $allInHierarchy[] = stringArrayCatenate($sel, $children);
+	int $s;
 
-	if ($singleMeshes == 0) { // if only groups were selected for union
-		string $uniqueNames[];
-		for ($a in $name) { // rule out anything containing "SmartGroup"
-			if (`gmatch $a "SmartGroup*"` == 0) {
-				$uniqueNames[`size $uniqueNames`] = $a;
+	//purge shape nodes
+	while ($s < `size $allInHierarchy`) {
+		string $item = $allInHierarchy[$s];
+		string $shapes[] = `findType -t "shape" $item`;
+		if ( $shapes[0] != "" ) { stringArrayRemoveAtIndex($s, $allInHierarchy); }
+		else { ++$s; }
+	}
+
+	if ( `size $allInHierarchy` < 2 ) { warning "Select at least two objects to combine."; return; }
+
+	string $groupsInHierarchy[];
+	string $meshesInHierarchy[];
+	// the constituentTopLevel (CTL) is the top-most object in a selection's hierarchy that is the source for all instanced objects below it.  
+	// this is common when group objects containing multiple models have been instanced.  querying whether one of these models is an instance will
+	// return true; however in cases like these, the true instance is the group rather than the model.
+	string $constituentsTopLevels[];
+
+	// check to see if anything is a constituent of a larger instance set
+	int $index;
+	int $constituentIndex[];
+	for ( $obj in $allInHierarchy ) {
+		if ( smt_isInstanceConstituent($obj) ) {
+			$constituentsTopLevels[`size $constituentsTopLevels`] = smt_getInstanceConstituentTopLevel($obj);
+			// the index keeps track of which object was a constituent so it can be removed later if user wants to omit CTLs
+			$constituentIndex[`size $constituentIndex`] = $index;
+		}
+		++$index;
+	}
+
+	// prompt about omitting or including top levels of constituents
+	string $msg = "One or more objects in your selection are constituents of a higher-level instance (typically a group that has been instanced).\n\nIn oder for combining to execute safely, you must either omit these constituents from the operation or include the entire instance hierarchy.\n\nBelow are the top-level instances of your selection:\n\n";
+
+	$index = 0;
+	for ( $obj in $constituentsTopLevels ) {
+		string $sn[] = `ls -sn $allInHierarchy[$index]`;
+		$msg = $msg + $sn[0] + "   is part of instance   " + $obj + "\n";
+		++$index;
+	}
+
+	int $keepGroups = 1;
+	if ( `size $constituentsTopLevels` > 0 ) {
+		string $prompt = `confirmDialog -title "Instance Groups Detected"
+							-message $msg
+							-button "Omit Constituents"
+							-button "Include Instance Groups"
+							-button "Abort"
+							-cancelButton "Abort"
+							-defaultButton "Omit Constituents"`;
+
+		if ( $prompt == "Abort" ) { return; }
+		if ( $prompt == "Omit Constituents" ) { $keepGroups = 0; }
+	}
+
+	int $groups = `checkBox -q -v smt_cb_groups`; // Keep Empty Groups checkbox
+
+	string $CTLobjects[];
+	// process CTLs.  either convert and store the new UUID or omit them from $allInHierarchy to avoid convert/combine conflicts
+	for ( $ctl in $constituentsTopLevels) {
+		if ( $keepGroups ) {
+			select $ctl;
+			catchQuiet( ConvertInstanceToObject() );
+			$CTLobjects = stringArrayCatenate($CTLobjects, `ls -uuid -sl`);
+		}
+		else {
+			for ( $i in $constituentIndex ) {
+				stringArrayRemoveAtIndex($i, $allInHierarchy);
+			}
+
+			// check to see if there are enough objects left in selection to combine
+			if ( `size $allInHierarchy` < 2 ) { 
+				select $sel;
+				warning "Not enough objects remaining to combine.  Operation aborted."; 
+				return; 
 			}
 		}
-		if (`size $uniqueNames` == 1) { $combinedName = $uniqueNames[0]; }
-		else if (`size $uniqueNames` > 1) {
-			string $prompt = `confirmDialog 
-				-title ""
-				-message "Pick the most suitable name for your new mesh"
-				-button $uniqueNames[0]
-				-button $uniqueNames[1]
-				-button ("SmartCombine_" + $sequence)`;
-			$combinedName = $prompt;
+	}
+
+
+	string $nonCTLobjects[];
+	for ( $obj in $allInHierarchy ) {
+		select $obj;
+
+		if ( smt_isInstance($obj) ) {
+			catchQuiet( ConvertInstanceToObject() );
 		}
-		else { $combinedName = ("SmartCombine_" + $sequence); } // catches any anomalies to make sure operation still executes
-	}
-	else { $combinedName = ("SmartCombine_" + $sequence); }
 
-	//  G.  Prepare Names (avoids errors caused by duplicate instance names)
-	int $prepTicker;
-	for ($i=`size $allObjects`-1; $i>-1; --$i) {
-		if (objExists ("CombinePrep_" + $prepTicker)) { ++$prepTicker; }
-		$allObjects[$i] = `rename $allObjects[$i] ("CombinePrep_" + $prepTicker)`;
+		$nonCTLobjects = stringArrayCatenate($nonCTLobjects, `ls -uuid -sl`);
 	}
 
-	//  H.  Store Instance Meshes
-	string $allInstances[];
-	for ($a in $allObjects) {
-		select $a;
-		if (size(`listRelatives -ap (listRelatives("-f", "-s"))`) > 1) { $allInstances[`size $allInstances`] = $a; }
+	select `ls -uuid $CTLobjects`;
+	SelectHierarchy;
+	select -add `ls -uuid $nonCTLobjects`;
+
+	if ( $keepGroups ) {
+		select -d $allGroups;
+		Unparent;
 	}
 
-	////  Do The Things
-	// 1.  Rename & Convert Instances
-	if ($singleMeshes == 0) { ConvertInstanceToObject; } // makes sure group-only selections are not instances
-	select $allInstances;
-	ConvertInstanceToObject;
-
-	// 2.  Actually Combine
-	select $allObjects;
 	CombinePolygons;
 	DeleteHistory;
-	CenterPivot;
-	if ($st_CustomNames_Combine == 0) { // This is for if the user does not want the custom naming conventions
-		string $newName[] = `ls -sl`;
-		$combinedName = $newName[0];
-	}
-	rename $combinedName;
 
-	// 3.  Cleanup
-	for ($a in $allObjects) {
-		if (`objExists $a` && $a != $combinedName && $a != ("|" + $combinedName)) { delete $a; }
-	}
-
-	// 4.  Return to Group
-	if (`objExists $untokenizedGroups[$index]`) {
-		parent $combinedName $untokenizedGroups[$index];
-	}
 }
+
+
+global proc string[] smt_getInstances(string $obj) {
+	// get children of object (shapes).
+	string $children[] = `listRelatives -fullPath -children $obj`;
+	// find all the instances.  if there's more than one parent then it's an instance
+	string $instances[];
+	if ( `size $children` > 0 ) {
+		$instances = `listRelatives -fullPath -allParents $children[0]`;
+		// remove current object from results
+		$instances = stringArrayRemove( { $obj }, $instances ); 
+	}
+
+	return $instances;
+}
+
+global proc string smt_getInstanceConstituentTopLevel(string $obj) {
+	string $instances[] = smt_getInstances($obj);
+
+	if (`size($instances)` > 0) { 
+		string $instanceParents[] = `listRelatives -fullPath -allParents $obj`;
+
+		int $kill;
+		while ( `size $instanceParents` > 1 ) {
+			string $p[] = `listRelatives -fullPath -allParents $instanceParents[0]`;
+			if ( `size $p` > 1 ) { $instanceParents = $p; }
+			else { break; }
+			++$kill;
+			if ( $kill > 500 ) { break; warning "Something went wrong and you managed to hit an infinite loop... Contact the author about this event."; }
+		}
+
+		for ( $p in $instanceParents ) {
+			if ( `match $p $obj` == $p && smt_isInstance($p) ) {
+				return $p;
+			}
+		}
+		return $obj;
+	}
+	else { return $obj; }
+}
+
+
+global proc int smt_isInstance(string $obj) {
+	if ( `size ( smt_getInstances($obj) )` > 0 ) {
+		return 1;
+	}
+	return 0;
+}
+
+
+global proc int smt_isInstanceConstituent(string $obj) {
+	string $instances[] = smt_getInstances($obj);
+
+	if ( `size $instances` > 1 ) { return 0; }
+
+	if ( smt_getInstanceConstituentTopLevel($obj) != $obj ) { return 1; }
+
+	return 0;
+}
+
 
 
 //////////////////////
@@ -228,7 +343,7 @@ global proc dpSmartCombine() {
 //////////////////////
 
 global proc dpSmartSeparate() {
-	global int $st_CustomNames_Separate;
+	global int $smt_CustomNames_Separate;
 	//  Currently does not correctly separate objects with children, but it doesn't seem to inadvertently delete anything either.
 	string $oldName[];
 	string $newName[];
@@ -271,7 +386,7 @@ global proc dpSmartSeparate() {
 	Ungroup;
 
 	// 3.  Rename all bits
-	if ($st_CustomNames_Separate == 1) { // This is for if the user does not want the custom naming conventions
+	if ($smt_CustomNames_Separate == 1) { // This is for if the user does not want the custom naming conventions
 		for ($chip in `ls -sl`) { rename $chip $newName[0];	}
 	}
 
@@ -289,8 +404,8 @@ global proc dpSmartSeparate() {
 // Extract and duplicate function similarly, with the only real difference being Extract
 // does not leave the selected faces behind on the old object
 global proc dpSmartExtractDuplicate(int $option) {
-	global int $st_CustomNames_DupeFace;
-	global int $st_CustomNames_Extract;
+	global int $smt_CustomNames_DupeFace;
+	global int $smt_CustomNames_Extract;
 	string $mode[] = { "Duplicate", "Extract" };
 	string $match[] = { "*_Dup_*", "*_Ext_*" };
 	string $suffix[] = { "_Dup_1", "_Ext_1" };
@@ -326,10 +441,10 @@ global proc dpSmartExtractDuplicate(int $option) {
 
 	////  Do The Things
 	// 1.  Duplicate
-	if ($st_CustomNames_DupeFace == 1 && $option == 0) { // Duplicate Face
+	if ($smt_CustomNames_DupeFace == 1 && $option == 0) { // Duplicate Face
 		$newName = `duplicate -n $newName[0] $oldName[0]`;
 	}
-	else if ($st_CustomNames_Extract == 1 && $option == 1) { // Extract
+	else if ($smt_CustomNames_Extract == 1 && $option == 1) { // Extract
 		$newName = `duplicate -n $newName[0] $oldName[0]`;
 	}
 	else if ($option == 1 || $option == 0) {
@@ -549,23 +664,78 @@ global proc stMenuHotkey(int $option) {
 global proc stAbout() {
 	global string $stVersion;
 	global string $stRelease;
-	
-    if (`window -exists stAboutWindow`) {
-        deleteUI stAboutWindow;
-        windowPref -remove stAboutWindow;
-    }
+	string $p = "smt_form_main";
+	string $wnd = "smartMeshToolsWindow";
+	int $w = `window -q -w $wnd`;
+	int $h = `window -q -h $wnd`;
+	float $col[] = { 0.115, 0.357, 0.500 };
+	float $f = .2;
 
-    window -mxb 0 -mnb 0 -tlb 1 -title "About SmartMesh Tools" -w 400 stAboutWindow;
-        gridLayout -numberOfColumns 1 -cellWidthHeight 400 175;
-            gridLayout -numberOfColumns 1 -cellWidthHeight 400 150;
-                scrollField -wordWrap true -editable false
-                	-text ( "SmartMesh Tools v" + $stVersion + " released " + $stRelease + " for Maya 2012 thru 2015.\n\nContact Dennis.Porter.3D@gmail.com with any bugs, comments, or questions.\n\nRefer to commented lines at the top of the .mel file for script information and modification instructions." );
-                gridLayout -numberOfColumns 3 -cellWidthHeight 200 25;
-                	iconTextButton -style "textOnly" -l "SmartMesh Tools on CreativeCrash" -c "system(\"shell start http://www.creativecrash.com/maya/script/smartmesh-tools\");";
-                	iconTextButton -style "textOnly" -l "Author Website" -bgc .2 .2 .2 -c "system(\"shell start http://dennisporter3d.com/mel.htm\");";
-                setParent..;
-            setParent..;
-		setParent..;
+	deleteUI $p;
 
-    showWindow stAboutWindow;
+	// Fancy window extension
+	smt_resizeWindow(1);
+
+	formLayout -bgc $f $f $f -p $wnd $p;
+		scrollField -bgc $f $f $f -wordWrap true -editable false
+			-text ( "SmartMesh Tools v" + $stVersion + " released " + $stRelease + " for Maya 2012 thru 2018.\n\nContact Dennis.Porter.3D@gmail.com with any bugs, comments, or questions.\n\nRefer to commented lines at the top of the .mel file for script information and modification instructions." )
+			smt_scroll_info;
+
+		// iconTextButton -style "textOnly" -l "SmartMesh Tools on CreativeCrash" -c "system(\"shell start http://www.creativecrash.com/maya/script/smartmesh-tools\");";
+		// iconTextButton -style "textOnly" -l "Author Website" -bgc .2 .2 .2 ;
+
+		iconTextButton -h 20 -bgc .35 .35 .35 -style "iconAndTextHorizontal" -w 185 -l "SmartMesh Tools on HighEnd3D" -c "system(\"shell start http://www.creativecrash.com/maya/script/smartmesh-tools\")" smt_btn_he;
+		iconTextButton -h 20 -bgc .35 .35 .35 -style "iconAndTextHorizontal" -w 185 -l "SmartMesh Tools on Gumroad" -c "system(\"shell start https://www.gumroad.com/dennisporter3d\");" smt_btn_gr;
+		iconTextButton -h 20 -bgc .35 .85 .35 -style "iconAndTextHorizontal" -w 125 -l "Author ArtStation" -c "system(\"shell start https://www.artstation.com/dennisporter3d\");" smt_btn_as;
+		iconTextButton -h 20 -bgc .2117 .2235 .2431 -style "iconAndTextHorizontal" -w 125 -l "Discord Server" -c "system(\"shell start https://discord.gg/VVB9RT8\");" smt_btn_gg;
+		iconTextButton -h 20 -bgc $col[0] $col[1] $col[2] -style "textOnly" -w 25 -l "OK" -c ( "deleteUI " + $p + "; smt_resizeWindow(-1); smt_buildUI();" ) smt_btn_ok;
+
+
+
+	int $pad = 10;
+	formLayout -edit 
+		-attachForm 	smt_scroll_info 		"top" 		0
+		-attachForm 	smt_scroll_info 		"bottom"	0
+		-attachForm 	smt_scroll_info 		"left" 		5
+		-attachForm 	smt_scroll_info 		"right" 	0
+
+		-attachForm 	smt_btn_ok 				"bottom" 	$pad
+		-attachForm		smt_btn_ok 				"right" 	$pad
+
+		-attachForm 	smt_btn_he				"bottom" 	$pad
+		-attachForm		smt_btn_he				"left" 		$pad
+		-attachForm 	smt_btn_gr				"bottom" 	35
+		-attachForm		smt_btn_gr				"left"	 	$pad
+		-attachForm 	smt_btn_gg				"bottom" 	35
+		-attachForm		smt_btn_gg				"right"	 	50
+		-attachForm 	smt_btn_as				"bottom" 	$pad
+		-attachForm		smt_btn_as				"right" 	50
+
+	$p;
+}
+
+
+global proc smt_resizeWindow(int $direction) {
+	$direction = min(1, $direction);
+	$direction = max(-1, $direction);
+
+	$direction = $direction * 2;
+	int $limit = 60;
+
+	string $wnd = "smartMeshToolsWindow";
+	int $w = `window -q -w $wnd`;
+	int $h = `window -q -h $wnd`;
+
+	// Fancy window extension
+	for ( $i=0; $i<$limit; ++$i ) {
+		window -e -w ($w + $direction) $wnd;
+		if ( $i % 5 == 0 ) { 
+			window -e -h ( $h + $direction ) $wnd;
+			$h = $h + $direction;
+		}
+		$w = $w + $direction;
+		refresh;
+	}
+
+
 }
